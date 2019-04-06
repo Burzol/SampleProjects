@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {background-color: lightgray;}
+.searchbar {width: 90%; text-align: center;}
+#search {width: 30%;}
+#title {  font-family: Verdana; margin-left: 10px; margin-right:10px; letter-spacing: 1px; width: 40%;}
+.table {width: auto; display:table; border-spacing:5px; }
+.row {display:table-row; width:auto; clear:both;}
+.col {float:left; display: table-column; width:250px;}
+img { vertical-align: middle;}
+#cover { text-align:right;}
+p {    display:inline-block; }
+</style>
+<title>Searching for Books in Google Books</title>
+</head>
+
+<body>
+<div class="searchbar" ><input id="search" /><input type="button" value="Search" onclick="loadBooks()" /></div>
+<div id="booklist"></div>
+
+<script>
+//document.getElementById('search').addEventListener('click',loadBooks);
+
+var book = '';
+var distToBottom;
+var ReLoad = false;
+var booksloaded = 1;
+var tablehtml ='';
+
+function loadBooks(appendornot){
+	 var s = document.getElementById("search").value;
+	 if(s=='') return 0;
+	 if(appendornot === undefined)
+	 {booksloaded = 1;}
+	 
+	var xhr = new XMLHttpRequest();
+ 	xhr.open('GET', 'https://www.googleapis.com/books/v1/volumes?q=intitle:'+s+'&startIndex='+booksloaded, true);
+ 	xhr.onload = function(){
+	if (xhr.status >= 200 && xhr.status < 400){
+			book = JSON.parse(this.responseText);			
+			if(book != undefined)
+			{
+			var srclink ='';
+			var bookdesc = '';
+			var booktitle ='';
+			var output = '<div class="table">';
+			for (var i = 0; i < book.items.length; i++) {
+				if(book.items[i] != undefined)
+				{
+					if(book.items[i].volumeInfo.imageLinks === undefined)
+					{srclink ='https://www.w3schools.com/images/w3schools_green.jpg';}
+					else
+					{srclink = book.items[i].volumeInfo.imageLinks.smallThumbnail;}
+					if(book.items[i].volumeInfo.description === undefined){
+					bookdesc='n/n';
+					booktitle = 'n/n';}
+					else{
+					bookdesc = book.items[i].volumeInfo.description.split(" ").splice(0,16).join(" ");
+					booktitle = book.items[i].volumeInfo.title;
+					if(book.items[i].volumeInfo.subtitle != undefined)
+					{booktitle +='  ('+book.items[i].volumeInfo.subtitle+')';}
+					}
+					output += '<div class="row"><div class="col" id="cover"><img src='+srclink+'></div>'+
+					'<div class="col" id="title"><b>'+booktitle+'</b></div>'+
+					'<div class="col" id="description">'+ bookdesc+'...</div></div>';				
+				}
+			}
+			output +='</div>';
+			ReLoad = false;
+			booksloaded  += 10;
+			if(appendornot === undefined)
+			{tablehtml = output;}
+			else			
+			{tablehtml +=output;}
+			document.getElementById('booklist').innerHTML = tablehtml;		
+			}			
+		}
+	}
+	xhr.send();
+}
+ 	
+function getDistFromBottom () {
+  var scrollPosition = window.pageYOffset;
+  var windowSize     = window.innerHeight;
+  var bodyHeight     = document.body.offsetHeight;
+  return Math.max(bodyHeight - (scrollPosition + windowSize), 0);
+}
+
+document.addEventListener('scroll', function() {
+        distToBottom = getDistFromBottom();
+        if (!ReLoad && distToBottom > 0 && distToBottom <= 10) {
+        ReLoad = true;
+		loadBooks("append");         
+        }
+});
+
+</script>
+
+</body>
+</html>
